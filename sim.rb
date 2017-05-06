@@ -3,21 +3,8 @@ require 'optparse'
 
 @mode = :WS2801
 
-def color_map(s)
-  {
-    "000" => 0,
-    "100" => 1,
-    "010" => 2,
-    "001" => 3,
-    "110" => 4,
-    "011" => 5,
-    "101" => 6,
-    "111" => 7
-  }[s]
-end
-
 def get_color(r, g, b)
-  return Ncurses::COLOR_PAIR(color_map("#{r > 0 ? 1 : 0}#{g > 0 ? 1: 0}#{b > 0 ? 1 : 0}"))
+  return Ncurses::COLOR_PAIR("#{r > 0 ? 1 : 0}#{g > 0 ? 1: 0}#{b > 0 ? 1 : 0}".to_i(2))
 end
 
 def set_pixel(x, y, r, g, b)
@@ -115,12 +102,12 @@ begin
 
   Ncurses::start_color()
   Ncurses::init_pair(0, Ncurses::COLOR_BLACK, Ncurses::COLOR_BLACK)
-  Ncurses::init_pair(1, Ncurses::COLOR_RED, Ncurses::COLOR_RED)
+  Ncurses::init_pair(1, Ncurses::COLOR_BLUE, Ncurses::COLOR_BLUE)
   Ncurses::init_pair(2, Ncurses::COLOR_GREEN, Ncurses::COLOR_GREEN)
-  Ncurses::init_pair(3, Ncurses::COLOR_BLUE, Ncurses::COLOR_BLUE)
-  Ncurses::init_pair(4, Ncurses::COLOR_YELLOW, Ncurses::COLOR_YELLOW)
-  Ncurses::init_pair(5, Ncurses::COLOR_CYAN, Ncurses::COLOR_CYAN)
-  Ncurses::init_pair(6, Ncurses::COLOR_MAGENTA, Ncurses::COLOR_MAGENTA)
+  Ncurses::init_pair(3, Ncurses::COLOR_CYAN, Ncurses::COLOR_CYAN)
+  Ncurses::init_pair(4, Ncurses::COLOR_RED, Ncurses::COLOR_RED)
+  Ncurses::init_pair(5, Ncurses::COLOR_MAGENTA, Ncurses::COLOR_MAGENTA)
+  Ncurses::init_pair(6, Ncurses::COLOR_YELLOW, Ncurses::COLOR_YELLOW)
   Ncurses::init_pair(7, Ncurses::COLOR_WHITE, Ncurses::COLOR_WHITE)
 
   io = File.open(serial_pipe, "r+")
