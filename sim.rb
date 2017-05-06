@@ -1,6 +1,8 @@
 require 'ncurses'
 require 'optparse'
 
+@mode = :WS2801
+
 def color_map(s)
   {
     "000" => 0,
@@ -23,6 +25,13 @@ def set_pixel(x, y, r, g, b)
   Ncurses::mvaddstr(y, x, " ")
 end
 
+def set_buffer(x, y, r, g, b)
+  if @buffer.nil?
+    @buffer = []
+  end
+  @buffer.push({ coord: [x, y], color: [r, g, b] })
+end
+
 def pixelx(i)
   if ((i - (i % 12)) / 12) % 2 == 0
     i % 12
@@ -39,13 +48,21 @@ def draw_pixel(buf)
   if buf.map(&:nil?).inject(false) { |n,p| n || p }
     puts "Not enough bytes"
   else
-    set_pixel(pixelx(buf[0]), pixely(buf[0]), buf[1], buf[2], buf[3])
+    if @mode != :WS2801
+      set_pixel(pixelx(buf[0]), pixely(buf[0]), buf[1], buf[2], buf[3])
+    else
+      set_buffer(pixelx(buf[0]), pixely(buf[0]), buf[1], buf[2], buf[3])
+    end
   end
   buf.clear
 end
 
 def draw_screen()
-#  puts "Draw Screen!"
+  return if @buffer.nil?
+  @buffer.each do |data|
+    set_pixel(data[:coord][0], data[:coord][1], data[:color][0], data[:color][1], data[:color][2])
+  end
+  @buffer = []
 end
 
 def process_byte(io, buf)
@@ -63,9 +80,12 @@ parser = OptionParser.new do |opts|
   opts.banner = "Usage: sim.rb [options] PIPE"
 
   opts.on("-m", "--mode [WS2801]", "Select simulation mode (WS2801|WS2812)") do |m|
-    options[:mode] = m
+    raise "Unknown mode: #{m}" unless [ "WS2801", "WS2812" ].include?(m)
+    @mode = m.to_sym
   end
 end
+
+parser.parse!(ARGV)
 
 if ARGV[0].nil?
   puts parser.banner
@@ -77,8 +97,6 @@ if !File.exists?(serial_pipe) or !File.pipe?(serial_pipe)
   puts "File #{serial_pipe} is not a valid pipe or does not exist"
   exit 1
 end
-
-parser.parse!(ARGV)
 
 begin
   Ncurses::initscr()
