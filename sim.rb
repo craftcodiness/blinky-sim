@@ -1,6 +1,5 @@
 require 'ncurses'
-
-bg = Ncurses::COLOR_BLACK
+require 'optparse'
 
 def color_map(s)
   {
@@ -25,7 +24,11 @@ def set_pixel(x, y, r, g, b)
 end
 
 def pixelx(i)
-  i % 12
+  if ((i - (i % 12)) / 12) % 2 == 0
+    i % 12
+  else
+    11 - (i % 12)
+  end
 end
 
 def pixely(i)
@@ -55,6 +58,28 @@ def process_byte(io, buf)
   end
 end
 
+options = {}
+parser = OptionParser.new do |opts|
+  opts.banner = "Usage: sim.rb [options] PIPE"
+
+  opts.on("-m", "--mode [WS2801]", "Select simulation mode (WS2801|WS2812)") do |m|
+    options[:mode] = m
+  end
+end
+
+if ARGV[0].nil?
+  puts parser.banner
+  exit 1
+end
+serial_pipe = ARGV[0]
+
+if !File.exists?(serial_pipe) or !File.pipe?(serial_pipe)
+  puts "File #{serial_pipe} is not a valid pipe or does not exist"
+  exit 1
+end
+
+parser.parse!(ARGV)
+
 begin
   Ncurses::initscr()
   Ncurses::noecho()
@@ -71,7 +96,7 @@ begin
   end
 
   Ncurses::start_color()
-  Ncurses::init_pair(0, Ncurses::COLOR_BLACK, bg)
+  Ncurses::init_pair(0, Ncurses::COLOR_BLACK, Ncurses::COLOR_BLACK)
   Ncurses::init_pair(1, Ncurses::COLOR_RED, Ncurses::COLOR_RED)
   Ncurses::init_pair(2, Ncurses::COLOR_GREEN, Ncurses::COLOR_GREEN)
   Ncurses::init_pair(3, Ncurses::COLOR_BLUE, Ncurses::COLOR_BLUE)
@@ -80,7 +105,7 @@ begin
   Ncurses::init_pair(6, Ncurses::COLOR_MAGENTA, Ncurses::COLOR_MAGENTA)
   Ncurses::init_pair(7, Ncurses::COLOR_WHITE, Ncurses::COLOR_WHITE)
 
-  io = File.open("/tmp/serial.pipe", "r+")
+  io = File.open(serial_pipe, "r+")
   buf = []
 
   while (:restart)
